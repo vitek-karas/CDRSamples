@@ -19,16 +19,18 @@ namespace AppWithPlugin
                     Console.ReadLine();
                 }
 
-                string pluginLocation = Path.GetFullPath(Path.Combine(
-                    Path.GetDirectoryName(typeof(Program).Assembly.Location), 
-                    @"..\..\..\..\HelloPlugin\bin\Debug\netcoreapp2.1\HelloPlugin.dll".Replace('\\', Path.DirectorySeparatorChar)));
+                string[] pluginPaths = new string[]
+                {
+                    @"HelloPlugin\bin\Debug\netcoreapp2.1\HelloPlugin.dll",
+                    @"JsonPlugin\bin\Debug\netcoreapp2.1\JsonPlugin.dll",
+                    @"OldJsonPlugin\bin\Debug\netcoreapp2.1\OldJsonPlugin.dll"
+                };
 
-                Console.WriteLine($"Loading plugin from: {pluginLocation}");
-                PluginLoadContext loadContext = new PluginLoadContext(pluginLocation);
-                Assembly helloPluginAssembly = loadContext.LoadFromAssemblyName(new AssemblyName("HelloPlugin"));
-                ICommandFactory commandFactory = CreateCommandFactory(helloPluginAssembly);
-
-                IEnumerable<ICommand> commands = commandFactory.CreateCommands();
+                IEnumerable<ICommand> commands = pluginPaths.SelectMany(pluginPath =>
+                {
+                    Assembly pluginAssembly = LoadPlugin(pluginPath);
+                    return CreateCommands(pluginAssembly);
+                }).ToList();
 
                 if (args.Length == 0)
                 {
@@ -40,14 +42,19 @@ namespace AppWithPlugin
                 }
                 else
                 {
-                    ICommand command = commands.FirstOrDefault(c => c.Name == args[0]);
-                    if (command == null)
+                    foreach (string commandName in args)
                     {
-                        Console.WriteLine("No such command is known.");
-                        return;
-                    }
+                        Console.WriteLine($"-- {commandName} --");
+                        ICommand command = commands.FirstOrDefault(c => c.Name == commandName);
+                        if (command == null)
+                        {
+                            Console.WriteLine("No such command is known.");
+                            return;
+                        }
 
-                    command.Execute();
+                        command.Execute();
+                        Console.WriteLine();
+                    }
                 }
             }
             catch (Exception ex)
@@ -56,24 +63,46 @@ namespace AppWithPlugin
             }
         }
 
-        static ICommandFactory CreateCommandFactory(Assembly assembly)
+        static Assembly LoadPlugin(string relativePath)
         {
+            // Navigate up to the solution root
+            string root = Path.GetFullPath(Path.Combine(
+                Path.GetDirectoryName(
+                    Path.GetDirectoryName(
+                        Path.GetDirectoryName(
+                            Path.GetDirectoryName(
+                                Path.GetDirectoryName(typeof(Program).Assembly.Location)))))));
+
+            string pluginLocation = Path.GetFullPath(Path.Combine(root, relativePath.Replace('\\', Path.DirectorySeparatorChar)));
+            Console.WriteLine($"Loading commands from: {pluginLocation}");
+            PluginLoadContext loadContext = new PluginLoadContext(pluginLocation);
+            return loadContext.LoadFromAssemblyName(new AssemblyName(Path.GetFileNameWithoutExtension(pluginLocation)));
+        }
+
+        static IEnumerable<ICommand> CreateCommands(Assembly assembly)
+        {
+            int count = 0;
+
             foreach (Type type in assembly.GetTypes())
             {
-                if (typeof(ICommandFactory).IsAssignableFrom(type))
+                if (typeof(ICommand).IsAssignableFrom(type))
                 {
-                    ICommandFactory result = Activator.CreateInstance(type) as ICommandFactory;
+                    ICommand result = Activator.CreateInstance(type) as ICommand;
                     if (result != null)
                     {
-                        return result;
+                        count++;
+                        yield return result;
                     }
                 }
             }
 
-            string availableTypes = string.Join(",", assembly.GetTypes().Select(t => t.FullName));
-            throw new ApplicationException(
-                $"Can't find type which implements ICommandFactory in {assembly} from {assembly.Location}.\n" +
-                $"Available types: {availableTypes}");
+            if (count == 0)
+            {
+                string availableTypes = string.Join(",", assembly.GetTypes().Select(t => t.FullName));
+                throw new ApplicationException(
+                    $"Can't find any type which implements ICommand in {assembly} from {assembly.Location}.\n" +
+                    $"Available types: {availableTypes}");
+            }
         }
     }
 }
