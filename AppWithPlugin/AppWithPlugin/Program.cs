@@ -1,6 +1,7 @@
 ﻿using PluginBase;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 
@@ -18,7 +19,9 @@ namespace AppWithPlugin
                     Console.ReadLine();
                 }
 
-                PluginLoadContext loadContext = new PluginLoadContext(@"F:\vitkaras\CDRSamples\AppWithPlugin\HelloPlugin\bin\Debug\netcoreapp2.2\HelloPlugin.dll");
+                string pluginLocation = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(typeof(Program).Assembly.Location), @"..\..\..\..\HelloPlugin\bin\Debug\netcoreapp3.0\HelloPlugin.dll"));
+                Console.WriteLine($"Loading plugin from: {pluginLocation}");
+                PluginLoadContext loadContext = new PluginLoadContext(pluginLocation);
                 Assembly helloPluginAssembly = loadContext.LoadFromAssemblyName(new AssemblyName("HelloPlugin"));
                 ICommandFactory commandFactory = (ICommandFactory)helloPluginAssembly.CreateInstance("HelloPlugin.CommandFactory");
 
