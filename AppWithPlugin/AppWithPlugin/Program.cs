@@ -21,11 +21,17 @@ namespace AppWithPlugin
 
                 string pluginLocation = Path.GetFullPath(Path.Combine(
                     Path.GetDirectoryName(typeof(Program).Assembly.Location), 
-                    @"..\..\..\..\HelloPlugin\bin\Debug\netcoreapp3.0\HelloPlugin.dll".Replace('\\', Path.DirectorySeparatorChar)));
+                    @"..\..\..\..\HelloPlugin\bin\Debug\netcoreapp2.1\HelloPlugin.dll".Replace('\\', Path.DirectorySeparatorChar)));
+
                 Console.WriteLine($"Loading plugin from: {pluginLocation}");
                 PluginLoadContext loadContext = new PluginLoadContext(pluginLocation);
                 Assembly helloPluginAssembly = loadContext.LoadFromAssemblyName(new AssemblyName("HelloPlugin"));
                 ICommandFactory commandFactory = (ICommandFactory)helloPluginAssembly.CreateInstance("HelloPlugin.CommandFactory");
+                if (commandFactory == null)
+                {
+                    string availableTypes = string.Join(",", helloPluginAssembly.GetTypes().Select(t => t.FullName));
+                    throw new ApplicationException("Can't find the command factory type. \nAvailable types: " + availableTypes);
+                }
 
                 IEnumerable<ICommand> commands = commandFactory.CreateCommands();
 
