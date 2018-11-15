@@ -26,12 +26,7 @@ namespace AppWithPlugin
                 Console.WriteLine($"Loading plugin from: {pluginLocation}");
                 PluginLoadContext loadContext = new PluginLoadContext(pluginLocation);
                 Assembly helloPluginAssembly = loadContext.LoadFromAssemblyName(new AssemblyName("HelloPlugin"));
-                ICommandFactory commandFactory = (ICommandFactory)helloPluginAssembly.CreateInstance("HelloPlugin.CommandFactory");
-                if (commandFactory == null)
-                {
-                    string availableTypes = string.Join(",", helloPluginAssembly.GetTypes().Select(t => t.FullName));
-                    throw new ApplicationException("Can't find the command factory type. \nAvailable types: " + availableTypes);
-                }
+                ICommandFactory commandFactory = CreateCommandFactory(helloPluginAssembly);
 
                 IEnumerable<ICommand> commands = commandFactory.CreateCommands();
 
@@ -59,6 +54,26 @@ namespace AppWithPlugin
             {
                 Console.WriteLine(ex);
             }
+        }
+
+        static ICommandFactory CreateCommandFactory(Assembly assembly)
+        {
+            foreach (Type type in assembly.GetTypes())
+            {
+                if (typeof(ICommandFactory).IsAssignableFrom(type))
+                {
+                    ICommandFactory result = Activator.CreateInstance(type) as ICommandFactory;
+                    if (result != null)
+                    {
+                        return result;
+                    }
+                }
+            }
+
+            string availableTypes = string.Join(",", assembly.GetTypes().Select(t => t.FullName));
+            throw new ApplicationException(
+                $"Can't find type which implements ICommandFactory in {assembly} from {assembly.Location}.\n" +
+                $"Available types: {availableTypes}");
         }
     }
 }
