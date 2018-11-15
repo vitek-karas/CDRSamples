@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using PluginBase;
 using System;
+using System.Reflection;
 
 namespace JsonPlugin
 {
@@ -12,21 +13,24 @@ namespace JsonPlugin
 
         private struct Info
         {
+            public string JsonVersion;
+            public string JsonLocation;
             public string Machine;
             public DateTime Date;
         }
 
         public int Execute()
         {
+            Assembly jsonAssembly = typeof(JsonConvert).Assembly;
             Info info = new Info()
             {
+                JsonVersion = jsonAssembly.FullName,
+                JsonLocation = jsonAssembly.Location,
                 Machine = Environment.MachineName,
                 Date = DateTime.Now
             };
 
-            JsonSerializer serializer = new JsonSerializer();
-            serializer.Serialize(Console.Out, info);
-            Console.WriteLine();
+            Console.WriteLine(JsonConvert.SerializeObject(info, Formatting.Indented));
 
             return 0;
         }
