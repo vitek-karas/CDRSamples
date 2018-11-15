@@ -19,7 +19,9 @@ namespace AppWithPlugin
                     Console.ReadLine();
                 }
 
-                string pluginLocation = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(typeof(Program).Assembly.Location), @"..\..\..\..\HelloPlugin\bin\Debug\netcoreapp3.0\HelloPlugin.dll"));
+                string pluginLocation = Path.GetFullPath(Path.Combine(
+                    Path.GetDirectoryName(typeof(Program).Assembly.Location), 
+                    @"..\..\..\..\HelloPlugin\bin\Debug\netcoreapp3.0\HelloPlugin.dll".Replace('\\', Path.DirectorySeparatorChar)));
                 Console.WriteLine($"Loading plugin from: {pluginLocation}");
                 PluginLoadContext loadContext = new PluginLoadContext(pluginLocation);
                 Assembly helloPluginAssembly = loadContext.LoadFromAssemblyName(new AssemblyName("HelloPlugin"));
