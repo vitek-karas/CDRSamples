@@ -25,6 +25,7 @@ namespace AppWithPlugin
                     @"JsonPlugin\bin\Debug\netcoreapp2.1\JsonPlugin.dll",
                     @"OldJsonPlugin\bin\Debug\netcoreapp2.1\OldJsonPlugin.dll",
                     @"FrenchPlugin\bin\Debug\netcoreapp2.1\FrenchPlugin.dll",
+                    @"UVPlugin\bin\Debug\netcoreapp2.1\UVPlugin.dll",
                 };
 
                 IEnumerable<ICommand> commands = pluginPaths.SelectMany(pluginPath =>
