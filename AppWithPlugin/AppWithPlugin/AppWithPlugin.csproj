@@ -11,7 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CDRTemporary\CDRTemporary.csproj" />
     <ProjectReference Include="..\PluginBase\PluginBase.csproj" />
   </ItemGroup>
 
